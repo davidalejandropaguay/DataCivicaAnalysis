@@ -95,12 +95,11 @@ defun24 <- apply_labels(defun24,
 homicidios <- subset(defun24, subset = TIPO_DEFUN==2)
 
 
-localidad <- read.dbf("./defunciones_base_datos_2024_dbf/CATEMLDE24.dbf", as.is = T)
-lenguas <- read.dbf("./defunciones_base_datos_2024_dbf/LENGUAS.dbf", as.is = T)
-listamex <- read.dbf("./defunciones_base_datos_2024_dbf/GPOLIMEX.dbf", as.is = T)
-parentesco <- read.dbf('./defunciones_base_datos_2024_dbf/PARENTESCO.dbf')
-
-table(homicidios$LENGUA)
+# localidad <- read.dbf("./defunciones_base_datos_2024_dbf/CATEMLDE24.dbf", as.is = T)
+# lenguas <- read.dbf("./defunciones_base_datos_2024_dbf/LENGUAS.dbf", as.is = T)
+# listamex <- read.dbf("./defunciones_base_datos_2024_dbf/GPOLIMEX.dbf", as.is = T)
+# parentesco <- read.dbf('./defunciones_base_datos_2024_dbf/PARENTESCO.dbf')
+# table(homicidios$LENGUA)
 
 
 # What—accidente? (1: sí; 8: NAp)
@@ -118,7 +117,9 @@ ggplotly(ggplot(homicidios, aes(x = CAUSA_DEF)) +
 # Who—sexo (1: H; 2:M) >90% son hombres
 ggplotly(ggplot(homicidios, aes(x=CAUSA_DEF, fill = as.factor(SEXO))) +
   geom_bar() +
-  coord_flip()
+  coord_flip() +
+    theme(axis.text.y = element_text(size = 5)) +
+    scale_fill_discrete(name="Sexo",breaks=c("1","2","9"), labels=c("Hombre","Mujer","Indeterminado"))
 )
 
 
@@ -138,31 +139,66 @@ ggplotly(ggplot(edad_estimada, aes(x = edad_estimada, fill=as.factor(SEXO))) +
   geom_histogram()
 )
 
+# Who—enfocado en algún grupo vulnerable?
+ggplotly(
+  ggplot
+)
+
+
 # Who—victimario: No especificado
 ggplotly(ggplot(homicidios, aes(x = as.factor(PAR_AGRE), fill = as.factor(SEXO))) +
   geom_bar()
 )
 
-# Where
+# Where—entidad federativa
 
+mexico_political <- read_excel("./catun_municipio/AGEEML_2025102162256_UTF.xlsx", skip = 3, sheet = "Consulta")
+homicidios$codubicacion <- paste0(homicidios$ENT_REGIS, homicidios$MUN_REGIS)
+homicidios <- merge(x = homicidios,
+                    y = subset(mexico_political, select = c(CVEGEO, CVE_ENT, NOM_ENT, CVE_MUN, NOM_MUN)),
+                    by.x = "codubicacion",
+                    by.y = "CVEGEO",
+                    all.x = T)
 
-
-Municipios <- read_excel("./catun_municipio/AGEEML_2025102162256_UTF.xlsx", skip = 3)
-homicidios$ENT_REGIS <- as.numeric(homicidios$ENT_REGIS)
-
-
-estados <- merge(x = subset(homicidios,select = c(ENT_REGIS, MUN_REGIS, LOC_REGIS)),
-                 y = Municipios,
-                 by.x = "MUN_REGIS",
-                 by.y = "CVE_MUN", all.x = T)
-
-# estados <- merge(x = estados, y = localidad, by.x = "LOC_REGIS", by.y = "CLAVE", all.x = T)
-
+# table(homicidios$ENT_REGIS, homicidios$NOM_ENT)
+# table(homicidios$MUN_REGIS, homicidios$NOM_MUN)
 ggplotly(
-  ggplot(estados, aes(x=NOM_ENT, fill=NOM_MUN)) +
+  ggplot(homicidios, aes(x=NOM_ENT, fill=NOM_MUN)) +
     geom_bar() +
     coord_flip()
 )
 
+# Where—lugar exacto, circunstancia, poco menos del 50% ocurrió en una carretera
+
+lugar_ocur_nom <- read_excel('./catun_municipio/AGEEML_2025102162256_UTF.xlsx', sheet = 'lugar')
+homicidios <- merge(x = homicidios,
+                    y = lugar_ocur_nom, 
+                    by = "LUGAR_OCUR",
+                    all.x = T)
+
+# la mayoria ocurrio en la calle o carretera, en Baja California predomina el 'se ignora' (fosas comunes?)
+ggplotly(
+  ggplot(homicidios, aes(x = as.factor(NOM_ENT), fill=as.factor(lugar))) +
+    geom_bar()
+)
+
+# hay un patrón para las muertes por edad?
+ggplotly(
+  ggplot(subset(homicidios, subset = (ANIO_OCUR != 9999 & ANIO_NACIM != 9999)),
+                aes(x = edad_estimada,
+                    fill=as.factor(lugar))) +
+    geom_histogram()
+)
+
+# hay un patrón para las muertes de mujeres?—Aparente a mayor edad, incrementa la probabilidad de que el homicidio ocurra en la vivienda, pero sólo es un sesgo de selección
+ggplotly(
+  ggplot(subset(homicidios, subset = (SEXO==2 & (ANIO_OCUR != 9999 & ANIO_NACIM != 9999))), aes(x = edad_estimada, fill = as.factor(lugar))) +
+    geom_bar()
+)
+ggplotly(
+  ggplot(subset(homicidios, subset = (SEXO==2 & (ANIO_OCUR != 9999 & ANIO_NACIM != 9999))), aes(x = edad_estimada, fill = as.factor(lugar))) +
+    geom_bar(position = "fill")
+)
+# table(homicidios$edad_estimada, homicidios$SEXO)
 
 
