@@ -102,10 +102,14 @@ homicidios <- subset(defun24, subset = TIPO_DEFUN==2)
 # table(homicidios$LENGUA)
 
 
+
+# Qué ---------------------------------------------------------------------
+
 # What—accidente? (1: sí; 8: NAp)
-ggplotly(ggplot(homicidios, aes(x = NATVIOLE)) +
+ggplotly(ggplot(homicidios, aes(x = NATVIOLE, fill=as.factor(SEXO))) +
   geom_bar()
   )
+
 
 # What—exactamente (X954—AGRESION CON DISPARO DE OTRAS ARMAS DE FUEGO, Y LAS NO ESPECIFICADAS, EN CALLES Y CARRETERAS)
 ggplotly(ggplot(homicidios, aes(x = CAUSA_DEF)) +
@@ -113,6 +117,7 @@ ggplotly(ggplot(homicidios, aes(x = CAUSA_DEF)) +
   coord_flip()
   )
 
+# Quién (víctima)---------------------------------------------------------------------
 
 # Who—sexo (1: H; 2:M) >90% son hombres
 ggplotly(ggplot(homicidios, aes(x=CAUSA_DEF, fill = as.factor(SEXO))) +
@@ -144,12 +149,14 @@ ggplotly(
   ggplot
 )
 
+# Quién (victimario)---------------------------------------------------------------------
 
 # Who—victimario: No especificado
 ggplotly(ggplot(homicidios, aes(x = as.factor(PAR_AGRE), fill = as.factor(SEXO))) +
   geom_bar()
 )
 
+# Dónde ---------------------------------------------------------------------
 # Where—entidad federativa
 
 mexico_political <- read_excel("./catun_municipio/AGEEML_2025102162256_UTF.xlsx", skip = 3, sheet = "Consulta")
@@ -182,6 +189,7 @@ ggplotly(
     geom_bar()
 )
 
+# Por qué ---------------------------------------------------------------------
 # hay un patrón para las muertes por edad?
 ggplotly(
   ggplot(subset(homicidios, subset = (ANIO_OCUR != 9999 & ANIO_NACIM != 9999)),
